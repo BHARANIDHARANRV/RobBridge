@@ -1,0 +1,116 @@
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { API_URLS } from '../config/server';
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  user: User | null;
+  authToken: string | null;
+  showSplashAfterLogin: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => void;
+  hideSplashAfterLogin: () => void;
+}
+
+interface User {
+  id: number;
+  email: string;
+  username: string;
+  role: string;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [showSplashAfterLogin, setShowSplashAfterLogin] = useState(false);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      console.log('Attempting login to:', API_URLS.LOGIN);
+      console.log('Login data:', { username: email, password: password });
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      // Use the backend login endpoint
+      const response = await fetch(API_URLS.LOGIN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: email, // Backend expects username, not email
+          password: password,
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('Login response status:', response.status);
+      console.log('Login response ok:', response.ok);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Login response data:', data);
+        if (data.success && data.token) {
+          setUser(data.user);
+          setAuthToken(data.token);
+          setIsAuthenticated(true);
+          setShowSplashAfterLogin(true);
+          console.log('Login successful, user authenticated');
+          return true;
+        }
+      } else {
+        const errorData = await response.text();
+        console.log('Login failed with status:', response.status, 'Error:', errorData);
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setAuthToken(null);
+    setIsAuthenticated(false);
+    setShowSplashAfterLogin(false);
+  };
+
+  const hideSplashAfterLogin = () => {
+    setShowSplashAfterLogin(false);
+  };
+
+  const value: AuthContextType = {
+    isAuthenticated,
+    user,
+    authToken,
+    showSplashAfterLogin,
+    login,
+    logout,
+    hideSplashAfterLogin,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
