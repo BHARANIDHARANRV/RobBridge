@@ -11,7 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { CameraView, Camera } from 'expo-camera';
+// import { CameraView, Camera } from 'expo-camera'; // Temporarily disabled for APK build
 import { useNavigation } from '@react-navigation/native';
 import { RootDrawerNavigationProp } from '../navigation/types';
 import { COLORS } from '../constants/colors';
@@ -233,15 +233,8 @@ const BarcodeScannerScreen = () => {
   const navigation = useNavigation<RootDrawerNavigationProp>();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Camera.requestCameraPermissionsAsync();
-        setHasPermission(status === 'granted');
-      } catch (error) {
-        console.error('Camera permission error:', error);
-        setHasPermission(false);
-      }
-    })();
+    // Temporarily disabled for APK build
+    setHasPermission(false);
   }, []);
 
   const openDrawer = () => {
@@ -449,35 +442,13 @@ const BarcodeScannerScreen = () => {
       </View>
 
       <View style={styles.content}>
-        {/* Camera View */}
+        {/* Camera View - Temporarily disabled for APK build */}
         <View style={styles.cameraContainer}>
-          <CameraView
-            ref={cameraRef}
-            style={styles.camera}
-            facing="back"
-            onBarcodeScanned={isScanning ? handleBarCodeScanned : undefined}
-            barcodeScannerSettings={{
-              barcodeTypes: ['ean13', 'ean8', 'upc_a', 'upc_e', 'code128', 'code39', 'qr'],
-            }}
-          >
-            {/* Camera Overlay */}
-            <View style={styles.cameraOverlay}>
-              {/* Scan Frame */}
-              <View style={styles.scanFrame}>
-                <View style={styles.corner} />
-                <View style={[styles.corner, styles.cornerTopRight]} />
-                <View style={[styles.corner, styles.cornerBottomLeft]} />
-                <View style={[styles.corner, styles.cornerBottomRight]} />
-              </View>
-              
-              {/* Instructions */}
-              <View style={styles.instructions}>
-                <Text style={styles.instructionText}>
-                  Position barcode within the frame
-                </Text>
-              </View>
-            </View>
-          </CameraView>
+          <View style={styles.placeholderCamera}>
+            <Ionicons name="camera" size={80} color={COLORS.gray} />
+            <Text style={styles.placeholderText}>Camera temporarily disabled for APK build</Text>
+            <Text style={styles.placeholderSubtext}>Barcode scanning will be available in the next update</Text>
+          </View>
         </View>
 
         {/* Debug Info */}
@@ -751,6 +722,24 @@ const styles = StyleSheet.create({
   },
   camera: {
     flex: 1,
+  },
+  placeholderCamera: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+  },
+  placeholderText: {
+    fontSize: SIZES.h4,
+    color: COLORS.text,
+    marginTop: SIZES.margin,
+    textAlign: 'center',
+  },
+  placeholderSubtext: {
+    fontSize: SIZES.body,
+    color: COLORS.textSecondary,
+    marginTop: SIZES.marginSmall,
+    textAlign: 'center',
   },
   cameraOverlay: {
     flex: 1,
