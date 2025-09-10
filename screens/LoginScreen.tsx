@@ -64,6 +64,35 @@ const LoginScreen = () => {
     Alert.alert('Forgot Password', 'Password reset functionality coming soon');
   };
 
+  const testNetworkConnection = async () => {
+    try {
+      console.log('Testing network connection to Railway backend...');
+      const response = await fetch('https://web-production-903c6.up.railway.app/health', {
+        method: 'GET',
+        timeout: 10000,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert(
+          'Network Test Success', 
+          `Backend is reachable!\n\nStatus: ${data.status}\nDatabase: ${data.database}\nVersion: ${data.version}`
+        );
+      } else {
+        Alert.alert(
+          'Network Test Failed', 
+          `Backend responded with status: ${response.status}\n\nThis might be a temporary issue. Please try again later.`
+        );
+      }
+    } catch (error) {
+      console.error('Network test error:', error);
+      Alert.alert(
+        'Network Test Failed', 
+        `Cannot connect to backend.\n\nError: ${error.message}\n\nPossible causes:\n• Backend is sleeping (Railway free tier)\n• Network connectivity issues\n• Backend is down\n\nPlease check your internet connection and try again.`
+      );
+    }
+  };
+
   // Show loading screen during login
   if (isLoading) {
     return <LoadingScreen message="Signing you in..." />;
@@ -147,6 +176,16 @@ const LoginScreen = () => {
             ) : (
               <Text style={styles.loginButtonText}>Sign In</Text>
             )}
+          </TouchableOpacity>
+
+          {/* Test Connection Button */}
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={testNetworkConnection}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="wifi" size={20} color={COLORS.primary} />
+            <Text style={styles.testButtonText}>Test Backend Connection</Text>
           </TouchableOpacity>
 
           {/* Demo Credentials */}
@@ -258,10 +297,27 @@ const styles = StyleSheet.create({
   loginButtonDisabled: {
     backgroundColor: COLORS.gray,
   },
+  testButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radius,
+    height: 45,
+    marginBottom: SIZES.margin,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
   loginButtonText: {
     fontSize: SIZES.body,
     fontWeight: 'bold',
     color: COLORS.textLight,
+  },
+  testButtonText: {
+    fontSize: SIZES.body,
+    fontWeight: '500',
+    color: COLORS.primary,
+    marginLeft: SIZES.marginSmall,
   },
   demoContainer: {
     backgroundColor: '#f8f9fa',
