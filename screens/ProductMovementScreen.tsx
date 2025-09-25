@@ -424,7 +424,7 @@ const ProductMovementScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.reportButton, { backgroundColor: COLORS.gray, marginTop: SIZES.margin }]}
           onPress={() => {
-            const baseUrl = 'http://192.168.0.129:5001';
+            const baseUrl = 'https://web-production-903c6.up.railway.app';
             Alert.alert(
               'Download Reports',
               `You can also download reports directly from:\n\n${baseUrl}/exports/\n\nOr use the generated download links from the report generation.`,

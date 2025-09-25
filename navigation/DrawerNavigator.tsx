@@ -16,6 +16,7 @@ import RackStatusScreen from '../screens/RackStatusScreen';
 import RackManagementScreenNew from '../screens/RackManagementScreenNew';
 import RackSettingsScreen from '../screens/RackSettingsScreen';
 import ProductMovementScreen from '../screens/ProductMovementScreen';
+import ESP32ControlScreen from '../screens/ESP32ControlScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 // Import the logo image
@@ -92,6 +93,9 @@ const DrawerNavigator = () => {
               break;
             case 'ProductMovement':
               iconName = focused ? 'swap-horizontal' : 'swap-horizontal-outline';
+              break;
+            case 'ESP32Control':
+              iconName = focused ? 'bluetooth' : 'bluetooth-outline';
               break;
             case 'Settings':
               iconName = focused ? 'settings' : 'settings-outline';
@@ -190,6 +194,13 @@ const DrawerNavigator = () => {
         component={ProductMovementScreen}
         options={{ 
           drawerLabel: 'Product Movement'
+        }}
+      />
+      <Drawer.Screen 
+        name="ESP32Control" 
+        component={ESP32ControlScreen}
+        options={{ 
+          drawerLabel: 'ESP32 Control'
         }}
       />
       <Drawer.Screen 

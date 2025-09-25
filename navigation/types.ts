@@ -6,6 +6,11 @@ export type RootDrawerParamList = {
   BarcodeGenerator: undefined;
   ImageProcessor: undefined;
   RobotControl: undefined;
+  RackStatus: undefined;
+  RackManagement: undefined;
+  RackSettings: undefined;
+  ProductMovement: undefined;
+  ESP32Control: undefined;
   Settings: undefined;
 };
 
