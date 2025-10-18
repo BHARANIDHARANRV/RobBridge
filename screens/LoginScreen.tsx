@@ -66,8 +66,8 @@ const LoginScreen = () => {
 
   const testNetworkConnection = async () => {
     try {
-      console.log('Testing network connection to Railway backend...');
-      const response = await fetch('https://web-production-903c6.up.railway.app/health', {
+      console.log('Testing network connection to local backend...');
+      const response = await fetch('http://192.168.0.117:5001/health', {
         method: 'GET',
         timeout: 10000,
       });
@@ -320,12 +320,12 @@ const styles = StyleSheet.create({
     marginLeft: SIZES.marginSmall,
   },
   demoContainer: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: COLORS.surface,
     borderRadius: SIZES.radius,
     padding: SIZES.padding,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: COLORS.grayDark,
   },
   demoTitle: {
     fontSize: SIZES.caption,

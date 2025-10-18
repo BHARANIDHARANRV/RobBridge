@@ -16,10 +16,13 @@ import {
   Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { RootDrawerNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants';
 import { API_URLS } from '../config/server';
-import * as FileSystem from 'expo-file-system';
+import { DEVELOPMENT_CONFIG } from '../config/development';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 interface ProductMovement {
@@ -34,7 +37,8 @@ interface ProductMovement {
 }
 
 const ProductMovementScreen: React.FC = () => {
-  const { authToken } = useAuth();
+  const navigation = useNavigation<RootDrawerNavigationProp>();
+  const { authToken, logout } = useAuth();
   const [movements, setMovements] = useState<ProductMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,6 +55,67 @@ const ProductMovementScreen: React.FC = () => {
 
   // Fetch movements from API
   const fetchMovements = useCallback(async () => {
+    // Development mode - use mock data
+    if (DEVELOPMENT_CONFIG.IS_DEVELOPMENT_MODE && DEVELOPMENT_CONFIG.USE_MOCK_DATA) {
+      console.log('Development mode: Using mock movement data');
+      const mockMovements: ProductMovement[] = [
+        {
+          id: 1,
+          movement_type: 'inbound',
+          product_name: 'Electronics Kit',
+          product_id: 'ELEK001',
+          rack_id: 'R001',
+          quantity: 50,
+          notes: 'Initial stock received',
+          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        },
+        {
+          id: 2,
+          movement_type: 'outbound',
+          product_name: 'Mechanical Parts',
+          product_id: 'MECH002',
+          rack_id: 'R003',
+          quantity: 25,
+          notes: 'Order fulfillment',
+          timestamp: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+        },
+        {
+          id: 3,
+          movement_type: 'inbound',
+          product_name: 'Widget Components',
+          product_id: 'WIDG003',
+          rack_id: 'R005',
+          quantity: 100,
+          notes: 'Weekly restock',
+          timestamp: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
+        },
+        {
+          id: 4,
+          movement_type: 'outbound',
+          product_name: 'Electronics Kit',
+          product_id: 'ELEK001',
+          rack_id: 'R001',
+          quantity: 15,
+          notes: 'Emergency order',
+          timestamp: new Date(Date.now() - 21600000).toISOString(), // 6 hours ago
+        },
+        {
+          id: 5,
+          movement_type: 'inbound',
+          product_name: 'Assembly Tools',
+          product_id: 'TOOL004',
+          rack_id: 'R002',
+          quantity: 30,
+          notes: 'New equipment delivery',
+          timestamp: new Date(Date.now() - 28800000).toISOString(), // 8 hours ago
+        },
+      ];
+      setMovements(mockMovements);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     if (!authToken) {
       console.log('No auth token available');
       setLoading(false);
@@ -301,6 +366,33 @@ const ProductMovementScreen: React.FC = () => {
     }
   };
 
+  // Navigation functions
+  const toggleDrawer = () => {
+    console.log('ProductMovementScreen: Menu button pressed - attempting to toggle drawer');
+    try {
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('ProductMovementScreen: Drawer toggled successfully');
+      } else {
+        console.error('ProductMovementScreen: navigation.toggleDrawer is not available');
+      }
+    } catch (error) {
+      console.error('ProductMovementScreen: Error toggling drawer:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log('ProductMovementScreen: Logout button pressed');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: logout },
+      ]
+    );
+  };
+
   const renderMovementItem = ({ item }: { item: ProductMovement }) => (
     <View style={styles.movementItem}>
       <View style={styles.movementInfo}>
@@ -380,6 +472,14 @@ const ProductMovementScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={toggleDrawer}
+          activeOpacity={0.5}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="menu" size={24} color={COLORS.white} />
+        </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Product Movements</Text>
           <Text style={styles.headerSubtitle}>Track inbound and outbound products</Text>
@@ -391,6 +491,14 @@ const ProductMovementScreen: React.FC = () => {
             onPress={() => setShowAddModal(true)}
           >
             <Ionicons name="add" size={20} color={COLORS.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={handleLogout}
+            activeOpacity={0.5}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="log-out-outline" size={24} color={COLORS.white} />
           </TouchableOpacity>
         </View>
       </View>
@@ -608,12 +716,20 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     padding: SIZES.padding,
     backgroundColor: COLORS.card,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  menuButton: {
+    padding: 8,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerContent: {
     flex: 1,
@@ -630,7 +746,11 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: SIZES.margin,
+  },
+  logoutButton: {
+    padding: 8,
   },
   actionButton: {
     width: 48,

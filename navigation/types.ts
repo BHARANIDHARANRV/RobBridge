@@ -11,6 +11,7 @@ export type RootDrawerParamList = {
   RackSettings: undefined;
   ProductMovement: undefined;
   ESP32Control: undefined;
+  History: undefined;
   Settings: undefined;
 };
 

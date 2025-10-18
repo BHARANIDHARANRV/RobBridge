@@ -27,7 +27,7 @@ const ESP32ControlScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showDeviceModal, setShowDeviceModal] = useState(false);
   const [robotSpeed, setRobotSpeed] = useState(100);
-  const [ledColor, setLedColor] = useState('#FF0000');
+  const [ledColor, setLedColor] = useState('#E3821E');
   const [ledBrightness, setLedBrightness] = useState(255);
   const [autoConnect, setAutoConnect] = useState(false);
 
@@ -57,30 +57,53 @@ const ESP32ControlScreen = () => {
     // Load user settings if needed
   };
 
-  const openDrawer = () => {
-    navigation.openDrawer();
+  const toggleDrawer = () => {
+    console.log('ESP32ControlScreen: Menu button pressed - attempting to toggle drawer');
+    console.log('ESP32ControlScreen: navigation object:', navigation);
+    try {
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('ESP32ControlScreen: Drawer toggled successfully');
+      } else {
+        console.error('ESP32ControlScreen: navigation.toggleDrawer is not available');
+      }
+    } catch (error) {
+      console.error('ESP32ControlScreen: Error toggling drawer:', error);
+    }
   };
 
   const startScan = async () => {
     setIsScanning(true);
     try {
       await ESP32Service.startScan();
-      // Refresh device list every 2 seconds while scanning
-      const scanInterval = setInterval(async () => {
-        const discoveredDevices = await ESP32Service.getDiscoveredDevices();
-        setDevices(discoveredDevices);
-      }, 2000);
-
-      // Stop scanning after 10 seconds
+      
+      // Fetch devices from your scan endpoint
+      const discoveredDevices = await ESP32Service.getDiscoveredDevices();
+      setDevices(discoveredDevices);
+      
+      // Stop scanning after 3 seconds
       setTimeout(() => {
-        clearInterval(scanInterval);
         ESP32Service.stopScan();
         setIsScanning(false);
-      }, 10000);
+      }, 3000);
     } catch (error) {
       console.error('Failed to start scan:', error);
       setIsScanning(false);
     }
+  };
+
+  const fetchScanData = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Fetching scan data from ESP32 endpoint...');
+      const discoveredDevices = await ESP32Service.getDiscoveredDevices();
+      setDevices(discoveredDevices);
+      console.log('Scan data received:', discoveredDevices);
+    } catch (error) {
+      console.error('Failed to fetch scan data:', error);
+      Alert.alert('Error', 'Failed to fetch scan data from ESP32');
+    }
+    setIsLoading(false);
   };
 
   const connectToDevice = async (device: ESP32Device) => {
@@ -139,11 +162,17 @@ const ESP32ControlScreen = () => {
       disabled={isLoading}
     >
       <View style={styles.deviceInfo}>
-        <Ionicons name="bluetooth" size={24} color={COLORS.primary} />
+        <Ionicons name="wifi" size={24} color={COLORS.primary} />
         <View style={styles.deviceDetails}>
           <Text style={styles.deviceName}>{item.name}</Text>
           <Text style={styles.deviceId}>ID: {item.id}</Text>
+          {item.ip && (
+            <Text style={styles.deviceRSSI}>IP: {item.ip}:{item.port || 5000}</Text>
+          )}
           <Text style={styles.deviceRSSI}>Signal: {item.rssi} dBm</Text>
+          {item.status && (
+            <Text style={styles.deviceStatus}>Status: {item.status}</Text>
+          )}
         </View>
       </View>
       <Ionicons name="chevron-forward" size={20} color={COLORS.gray} />
@@ -170,7 +199,7 @@ const ESP32ControlScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton} onPress={openDrawer}>
+        <TouchableOpacity style={styles.menuButton} onPress={toggleDrawer}>
           <Ionicons name="menu" size={28} color={COLORS.textLight} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>ESP32 Control</Text>
@@ -207,21 +236,38 @@ const ESP32ControlScreen = () => {
           )}
         </View>
 
-        {/* Scan Button */}
-        <TouchableOpacity
-          style={[styles.scanButton, isScanning && styles.scanButtonActive]}
-          onPress={startScan}
-          disabled={isScanning}
-        >
-          <Ionicons
-            name={isScanning ? "stop" : "search"}
-            size={20}
-            color={COLORS.textLight}
-          />
-          <Text style={styles.scanButtonText}>
-            {isScanning ? 'Scanning...' : 'Scan for ESP32'}
-          </Text>
-        </TouchableOpacity>
+        {/* Scan Buttons */}
+        <View style={styles.scanButtonsContainer}>
+          <TouchableOpacity
+            style={[styles.scanButton, isScanning && styles.scanButtonActive]}
+            onPress={startScan}
+            disabled={isScanning}
+          >
+            <Ionicons
+              name={isScanning ? "stop" : "search"}
+              size={20}
+              color={COLORS.textLight}
+            />
+            <Text style={styles.scanButtonText}>
+              {isScanning ? 'Scanning...' : 'Scan for ESP32'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.scanButton, styles.fetchButton]}
+            onPress={fetchScanData}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name="refresh"
+              size={20}
+              color={COLORS.textLight}
+            />
+            <Text style={styles.scanButtonText}>
+              {isLoading ? 'Fetching...' : 'Fetch Scan Data'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Device List */}
         {devices.length > 0 && (
@@ -301,7 +347,7 @@ const ESP32ControlScreen = () => {
             <View style={styles.ledControl}>
               <Text style={styles.ledLabel}>LED Control</Text>
               <View style={styles.ledButtons}>
-                {['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'].map((color) => (
+                {['#E3821E', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'].map((color) => (
                   <TouchableOpacity
                     key={color}
                     style={[styles.ledButton, { backgroundColor: color }]}
@@ -366,6 +412,9 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     flex: 1,
@@ -410,6 +459,11 @@ const styles = StyleSheet.create({
     fontSize: SIZES.caption,
     color: COLORS.textSecondary,
   },
+  scanButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.margin,
+  },
   scanButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -417,7 +471,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderRadius: SIZES.radius,
     padding: SIZES.padding,
-    marginBottom: SIZES.margin,
+    flex: 0.48,
+  },
+  fetchButton: {
+    backgroundColor: COLORS.secondary,
   },
   scanButtonActive: {
     backgroundColor: COLORS.error,
@@ -467,6 +524,11 @@ const styles = StyleSheet.create({
   deviceRSSI: {
     fontSize: SIZES.caption,
     color: COLORS.textSecondary,
+  },
+  deviceStatus: {
+    fontSize: SIZES.caption,
+    color: COLORS.success,
+    fontWeight: 'bold',
   },
   controlsSection: {
     marginTop: SIZES.marginLarge,
@@ -596,3 +658,4 @@ const styles = StyleSheet.create({
 });
 
 export default ESP32ControlScreen;
+

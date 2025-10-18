@@ -17,6 +17,7 @@ import RackManagementScreenNew from '../screens/RackManagementScreenNew';
 import RackSettingsScreen from '../screens/RackSettingsScreen';
 import ProductMovementScreen from '../screens/ProductMovementScreen';
 import ESP32ControlScreen from '../screens/ESP32ControlScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 // Import the logo image
@@ -97,6 +98,9 @@ const DrawerNavigator = () => {
             case 'ESP32Control':
               iconName = focused ? 'bluetooth' : 'bluetooth-outline';
               break;
+            case 'History':
+              iconName = focused ? 'bookmark' : 'bookmark-outline';
+              break;
             case 'Settings':
               iconName = focused ? 'settings' : 'settings-outline';
               break;
@@ -145,6 +149,13 @@ const DrawerNavigator = () => {
         component={BarcodeScannerScreen}
         options={{ 
           drawerLabel: 'Scan Barcode'
+        }}
+      />
+      <Drawer.Screen 
+        name="History" 
+        component={HistoryScreen}
+        options={{ 
+          drawerLabel: 'Saved Barcodes'
         }}
       />
       <Drawer.Screen 

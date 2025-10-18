@@ -60,18 +60,45 @@ const SettingsScreen = () => {
         title: 'Profile & Account',
         items: [
           {
-            id: 'edit-profile',
-            title: 'Edit Profile',
-            subtitle: 'Update your personal information',
-            icon: 'person',
+            id: 'phone-number',
+            title: 'Phone Number',
+            subtitle: '+1 (555) 123-4567',
+            icon: 'call',
             type: 'button',
-            onPress: () => setShowProfileModal(true),
+          },
+          {
+            id: 'role',
+            title: 'Role',
+            subtitle: 'admin',
+            icon: 'shield',
+            type: 'button',
+          },
+          {
+            id: 'company',
+            title: 'Company Name',
+            subtitle: 'robridge technologies',
+            icon: 'business',
+            type: 'button',
+          },
+          {
+            id: 'member-since',
+            title: 'Member Since',
+            subtitle: 'jan 2025',
+            icon: 'calendar',
+            type: 'button',
+          },
+          {
+            id: 'security-level',
+            title: 'Security Level',
+            subtitle: 'standard',
+            icon: 'lock-closed',
+            type: 'button',
           },
           {
             id: 'change-password',
             title: 'Change Password',
             subtitle: 'Update your account password',
-            icon: 'lock-closed',
+            icon: 'key',
             type: 'button',
             onPress: () => Alert.alert('Change Password', 'Password change functionality coming soon'),
           },
@@ -276,30 +303,46 @@ const SettingsScreen = () => {
   };
 
   const handleLogout = () => {
+    console.log('SettingsScreen: Logout button pressed');
+    console.log('SettingsScreen: logout function available:', typeof logout);
+    if (typeof logout !== 'function') {
+      console.error('SettingsScreen: logout function is not available');
+      return;
+    }
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'No', style: 'cancel' },
         { 
-          text: 'Logout', 
+          text: 'Yes', 
           style: 'destructive',
           onPress: () => {
-            logout();
-            Alert.alert('Logged Out', 'You have been successfully logged out');
+            console.log('SettingsScreen: Logout confirmed, calling logout function');
+            try {
+              logout();
+              Alert.alert('Logged Out', 'You have been successfully logged out');
+            } catch (error) {
+              console.error('SettingsScreen: Error calling logout:', error);
+            }
           }
         },
       ]
     );
   };
 
-  const openDrawer = () => {
-    console.log('Menu button pressed - attempting to open drawer');
+  const toggleDrawer = () => {
+    console.log('SettingsScreen: Menu button pressed - attempting to toggle drawer');
+    console.log('SettingsScreen: navigation object:', navigation);
     try {
-      navigation.openDrawer();
-      console.log('Drawer opened successfully');
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('SettingsScreen: Drawer toggled successfully');
+      } else {
+        console.error('SettingsScreen: navigation.toggleDrawer is not available');
+      }
     } catch (error) {
-      console.error('Error opening drawer:', error);
+      console.error('SettingsScreen: Error toggling drawer:', error);
     }
   };
 
@@ -379,16 +422,29 @@ const SettingsScreen = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={openDrawer}
+          onPress={() => {
+            console.log('SettingsScreen: Menu button TouchableOpacity pressed');
+            toggleDrawer();
+          }}
           activeOpacity={0.5}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="menu" size={28} color={COLORS.textLight} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <Ionicons name="log-out-outline" size={24} color={COLORS.textLight} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={() => {
+              console.log('SettingsScreen: Logout button TouchableOpacity pressed');
+              handleLogout();
+            }}
+            activeOpacity={0.5}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="log-out-outline" size={24} color={COLORS.textLight} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -562,6 +618,9 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     flex: 1,
@@ -570,6 +629,10 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     textAlign: 'center',
     marginLeft: -40,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   logoutButton: {
     padding: 8,

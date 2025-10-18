@@ -1,7 +1,7 @@
 // Server configuration for the Robridge app
 export const SERVER_CONFIG = {
   // Base URL for the Python barcode server
-  BASE_URL: 'https://web-production-903c6.up.railway.app',
+  BASE_URL: 'http://192.168.137.182:5001',
   
   // API endpoints
   ENDPOINTS: {

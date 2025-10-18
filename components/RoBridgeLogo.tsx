@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     fontSize: 48,
   },
   bridgeText: {
-    color: '#ff6b35',
+    color: '#E3821E',
     fontSize: 48,
   },
   decorativeContainer: {
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   circuitElement: {
     width: 24,
     height: 4,
-    backgroundColor: '#ff6b35',
+    backgroundColor: '#E3821E',
     borderRadius: 2,
   },
 });

@@ -17,6 +17,7 @@ import { RootDrawerNavigationProp } from '../navigation/types';
 import { COLORS } from '../constants/colors';
 import { SIZES } from '../constants/sizes';
 import { API_URLS } from '../config/server';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ScanResult {
   id: string;
@@ -231,20 +232,37 @@ const BarcodeScannerScreen = () => {
   
   const cameraRef = useRef<any>(null);
   const navigation = useNavigation<RootDrawerNavigationProp>();
+  const { logout } = useAuth();
 
   useEffect(() => {
     // Temporarily disabled for APK build
     setHasPermission(false);
   }, []);
 
-  const openDrawer = () => {
-    console.log('Menu button pressed - attempting to open drawer');
+  const toggleDrawer = () => {
+    console.log('BarcodeScannerScreen: Menu button pressed - attempting to toggle drawer');
+    console.log('BarcodeScannerScreen: navigation object:', navigation);
     try {
-      navigation.openDrawer();
-      console.log('Drawer opened successfully');
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('BarcodeScannerScreen: Drawer toggled successfully');
+      } else {
+        console.error('BarcodeScannerScreen: navigation.toggleDrawer is not available');
+      }
     } catch (error) {
-      console.error('Error opening drawer:', error);
+      console.error('BarcodeScannerScreen: Error toggling drawer:', error);
     }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: logout },
+      ]
+    );
   };
 
   const startScanning = () => {
@@ -373,7 +391,7 @@ const BarcodeScannerScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.menuButton}
-            onPress={openDrawer}
+            onPress={toggleDrawer}
             activeOpacity={0.5}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -398,7 +416,7 @@ const BarcodeScannerScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.menuButton}
-            onPress={openDrawer}
+            onPress={toggleDrawer}
             activeOpacity={0.5}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -429,16 +447,21 @@ const BarcodeScannerScreen = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={openDrawer}
+          onPress={toggleDrawer}
           activeOpacity={0.5}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="menu" size={28} color={COLORS.textLight} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Barcode Scanner</Text>
-        <TouchableOpacity style={styles.resultsButton} onPress={() => setShowResults(true)}>
-          <Ionicons name="list" size={24} color={COLORS.textLight} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.resultsButton} onPress={() => setShowResults(true)}>
+            <Ionicons name="list" size={24} color={COLORS.textLight} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color={COLORS.textLight} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -693,6 +716,9 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     flex: 1,
@@ -706,9 +732,16 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginRight: 8,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   headerRight: {
-    width: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   content: {
     flex: 1,

@@ -1,8 +1,8 @@
 export const COLORS = {
   // Primary brand colors - Orange theme
-  primary: '#FF6B35',
-  primaryLight: '#FF8A65',
-  primaryDark: '#E55A2B',
+  primary: '#E3821E',
+  primaryLight: '#F0A050',
+  primaryDark: '#C66B1A',
   
   // Secondary colors - Black theme
   secondary: '#000000',
@@ -17,14 +17,14 @@ export const COLORS = {
   // Text colors - Orange and white theme
   text: '#ffffff',
   textPrimary: '#ffffff',
-  textSecondary: '#FF6B35',
+  textSecondary: '#E3821E',
   textLight: '#ffffff',
   
   // Status colors - Orange theme
   success: '#4caf50',
-  warning: '#FF6B35',
+  warning: '#E3821E',
   error: '#f44336',
-  info: '#FF6B35',
+  info: '#E3821E',
   
   // Neutral colors - Black theme
   gray: '#666666',
@@ -39,18 +39,18 @@ export const COLORS = {
   // Robot control colors - Orange theme
   robotConnected: '#4caf50',
   robotDisconnected: '#f44336',
-  robotMoving: '#FF6B35',
-  robotError: '#FF6B35',
+  robotMoving: '#E3821E',
+  robotError: '#E3821E',
   
   // Chart colors - Black and Orange theme
   chartColors: [
-    '#FF6B35',
-    '#FF8A65',
+    '#E3821E',
+    '#F0A050',
     '#000000',
     '#1a1a1a',
     '#4caf50',
-    '#FF6B35',
-    '#FF6B35',
+    '#E3821E',
+    '#E3821E',
     '#f44336'
   ]
 };

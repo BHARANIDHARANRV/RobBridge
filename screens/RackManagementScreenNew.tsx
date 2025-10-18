@@ -14,9 +14,12 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { RootDrawerNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS, SIZES } from '../constants';
 import { API_URLS } from '../config/server';
+import { DEVELOPMENT_CONFIG } from '../config/development';
 
 interface Rack {
   id: string;
@@ -28,7 +31,8 @@ interface Rack {
 }
 
 const RackManagementScreenNew: React.FC = () => {
-  const { authToken } = useAuth();
+  const navigation = useNavigation<RootDrawerNavigationProp>();
+  const { authToken, logout } = useAuth();
   const [racks, setRacks] = useState<Rack[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +44,53 @@ const RackManagementScreenNew: React.FC = () => {
 
   // Fetch racks from API
   const fetchRacks = useCallback(async () => {
+    // Development mode - use mock data
+    if (DEVELOPMENT_CONFIG.IS_DEVELOPMENT_MODE && DEVELOPMENT_CONFIG.USE_MOCK_DATA) {
+      console.log('Development mode: Using mock rack data');
+      const mockRacks: Rack[] = [
+        {
+          id: 'R001',
+          name: 'Rack A1',
+          status: 'occupied',
+          productName: 'Electronics Kit',
+          productId: 'ELEK001',
+          lastUpdated: new Date().toISOString(),
+        },
+        {
+          id: 'R002',
+          name: 'Rack A2',
+          status: 'empty',
+          lastUpdated: new Date().toISOString(),
+        },
+        {
+          id: 'R003',
+          name: 'Rack A3',
+          status: 'occupied',
+          productName: 'Mechanical Parts',
+          productId: 'MECH002',
+          lastUpdated: new Date().toISOString(),
+        },
+        {
+          id: 'R004',
+          name: 'Rack B1',
+          status: 'empty',
+          lastUpdated: new Date().toISOString(),
+        },
+        {
+          id: 'R005',
+          name: 'Rack B2',
+          status: 'occupied',
+          productName: 'Widget Components',
+          productId: 'WIDG003',
+          lastUpdated: new Date().toISOString(),
+        },
+      ];
+      setRacks(mockRacks);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     if (!authToken) {
       console.log('No auth token available');
       setLoading(false);
@@ -208,6 +259,33 @@ const RackManagementScreenNew: React.FC = () => {
     setNewRack({ name: '', productName: '', productId: '' });
   };
 
+  // Navigation functions
+  const toggleDrawer = () => {
+    console.log('RackManagementScreen: Menu button pressed - attempting to toggle drawer');
+    try {
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('RackManagementScreen: Drawer toggled successfully');
+      } else {
+        console.error('RackManagementScreen: navigation.toggleDrawer is not available');
+      }
+    } catch (error) {
+      console.error('RackManagementScreen: Error toggling drawer:', error);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log('RackManagementScreen: Logout button pressed');
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: logout },
+      ]
+    );
+  };
+
   const renderRackItem = ({ item }: { item: Rack }) => (
     <View style={styles.rackItem}>
       <View style={styles.rackInfo}>
@@ -290,16 +368,34 @@ const RackManagementScreenNew: React.FC = () => {
       
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={toggleDrawer}
+          activeOpacity={0.5}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="menu" size={24} color={COLORS.white} />
+        </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Rack Management</Text>
           <Text style={styles.headerSubtitle}>{racks.length} racks total</Text>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => setShowAddModal(true)}
-        >
-          <Ionicons name="add" size={24} color={COLORS.text} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowAddModal(true)}
+          >
+            <Ionicons name="add" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={handleLogout}
+            activeOpacity={0.5}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="log-out-outline" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Racks List */}
@@ -492,7 +588,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 20,
@@ -512,6 +607,23 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 14,
     color: COLORS.gray,
+  },
+  menuButton: {
+    padding: 8,
+    marginRight: 10,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoutButton: {
+    padding: 8,
   },
   addButton: {
     backgroundColor: COLORS.primary,

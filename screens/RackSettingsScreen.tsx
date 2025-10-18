@@ -216,7 +216,7 @@ const RackSettingsScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={() => navigation.openDrawer()}
+          onPress={() => navigation.toggleDrawer()}
         >
           <Ionicons name="menu" size={24} color={COLORS.white} />
         </TouchableOpacity>
@@ -416,6 +416,11 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
     fontSize: SIZES.h2,

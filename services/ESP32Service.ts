@@ -1,12 +1,15 @@
-import BleManager from 'react-native-ble-manager';
 import { PermissionsAndroid, Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { DEVELOPMENT_CONFIG } from '../config/development';
 
 export interface ESP32Device {
   id: string;
   name: string;
   rssi: number;
   advertising: any;
+  ip?: string;
+  port?: number;
+  status?: string;
 }
 
 export interface RobotCommand {
@@ -22,51 +25,37 @@ class ESP32Service {
   private isConnected: boolean = false;
   private isScanning: boolean = false;
 
-  // ESP32 Service UUIDs (you'll need to match these with your ESP32 code)
-  private readonly ESP32_SERVICE_UUID = '12345678-1234-1234-1234-123456789ABC';
-  private readonly ESP32_CHARACTERISTIC_UUID = '87654321-4321-4321-4321-CBA987654321';
+  // ESP32 Network Configuration
+  private readonly ESP32_SCAN_URL = 'http://192.168.104.1:5000/scan';
+  private readonly ESP32_BASE_URL = 'http://192.168.104.1:5000';
 
   constructor() {
-    this.initializeBluetooth();
+    this.initializeNetwork();
   }
 
-  private async initializeBluetooth() {
+  private async initializeNetwork() {
     try {
-      await BleManager.start({ showAlert: false });
-      console.log('Bluetooth initialized successfully');
+      // Initialize network connection to ESP32
+      console.log('Network ESP32 service initialized successfully');
+      console.log('Scanning endpoint:', this.ESP32_SCAN_URL);
     } catch (error) {
-      console.error('Failed to initialize Bluetooth:', error);
+      console.error('Failed to initialize network ESP32 service:', error);
     }
   }
 
   async requestPermissions(): Promise<boolean> {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
-        ]);
-
-        const allGranted = Object.values(granted).every(
-          permission => permission === PermissionsAndroid.RESULTS.GRANTED
-        );
-
-        if (!allGranted) {
-          Alert.alert(
-            'Permissions Required',
-            'Bluetooth permissions are required to connect to ESP32 devices.'
-          );
-          return false;
-        }
-        return true;
-      } catch (error) {
-        console.error('Permission request failed:', error);
-        return false;
-      }
+    // Network requests don't require special permissions
+    // Just check if we have network access
+    try {
+      const response = await fetch('https://www.google.com', { 
+        method: 'HEAD',
+        timeout: 5000 
+      });
+      return response.ok;
+    } catch (error) {
+      console.log('Network check failed, but local network should still work');
+      return true; // Allow local network access even if internet is down
     }
-    return true; // iOS permissions are handled automatically
   }
 
   async startScan(): Promise<void> {
@@ -77,52 +66,170 @@ class ESP32Service {
 
     try {
       this.isScanning = true;
-      await BleManager.scan([], 10, true); // Scan for 10 seconds
-      console.log('Started scanning for ESP32 devices');
+      console.log('Starting network scan for ESP32 devices...');
+      console.log('Scanning endpoint:', this.ESP32_SCAN_URL);
+      
+      // Simulate scanning process
+      setTimeout(() => {
+        console.log('Network scan completed');
+        this.isScanning = false;
+      }, 3000);
+      
     } catch (error) {
-      console.error('Failed to start scan:', error);
+      console.error('Failed to start network scan:', error);
       this.isScanning = false;
     }
   }
 
   async stopScan(): Promise<void> {
     try {
-      await BleManager.stopScan();
       this.isScanning = false;
-      console.log('Stopped scanning');
+      console.log('Stopped network scanning');
     } catch (error) {
-      console.error('Failed to stop scan:', error);
+      console.error('Failed to stop network scan:', error);
     }
   }
 
   async getDiscoveredDevices(): Promise<ESP32Device[]> {
+    // Development mode - return mock data immediately
+    if (DEVELOPMENT_CONFIG.IS_DEVELOPMENT_MODE && DEVELOPMENT_CONFIG.USE_MOCK_DATA) {
+      console.log('Development mode: Using mock ESP32 devices');
+      const mockDevices: ESP32Device[] = [
+        {
+          id: 'mock-esp32-001',
+          name: 'RobridgeESP32 (Mock)',
+          rssi: -45,
+          advertising: { manufacturerData: 'Mock ESP32 Device' },
+          ip: '192.168.104.1',
+          port: 5000,
+          status: 'Available'
+        },
+        {
+          id: 'mock-esp32-002',
+          name: 'ControllerESP32 (Mock)',
+          rssi: -50,
+          advertising: { manufacturerData: 'Mock Controller Device' },
+          ip: '192.168.104.2',
+          port: 5000,
+          status: 'Available'
+        }
+      ];
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return mockDevices;
+    }
+
     try {
-      const peripherals = await BleManager.getDiscoveredPeripherals();
-      return peripherals.map(peripheral => ({
-        id: peripheral.id,
-        name: peripheral.name || 'Unknown Device',
-        rssi: peripheral.rssi,
-        advertising: peripheral.advertising,
-      }));
+      console.log('Fetching devices from:', this.ESP32_SCAN_URL);
+      
+      // Fetch data from your ESP32 scan endpoint
+      const response = await fetch(this.ESP32_SCAN_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000 // 10 second timeout
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Received scan data:', data);
+        
+        // Transform the data to match our ESP32Device interface
+        const devices: ESP32Device[] = [];
+        
+        // Handle different response formats
+        if (Array.isArray(data)) {
+          // If data is already an array
+          devices.push(...data.map((item: any, index: number) => ({
+            id: item.id || `esp32-${index}`,
+            name: item.name || item.device_name || 'ESP32 Device',
+            rssi: item.rssi || item.signal || -50,
+            advertising: item.advertising || {},
+            ip: item.ip || '192.168.104.1',
+            port: item.port || 5000,
+            status: item.status || 'Available'
+          })));
+        } else if (data.devices && Array.isArray(data.devices)) {
+          // If data has a devices property
+          devices.push(...data.devices.map((item: any, index: number) => ({
+            id: item.id || `esp32-${index}`,
+            name: item.name || item.device_name || 'ESP32 Device',
+            rssi: item.rssi || item.signal || -50,
+            advertising: item.advertising || {},
+            ip: item.ip || '192.168.104.1',
+            port: item.port || 5000,
+            status: item.status || 'Available'
+          })));
+        } else {
+          // If data is a single object
+          devices.push({
+            id: data.id || 'esp32-001',
+            name: data.name || data.device_name || 'ESP32 Device',
+            rssi: data.rssi || data.signal || -50,
+            advertising: data.advertising || {},
+            ip: data.ip || '192.168.104.1',
+            port: data.port || 5000,
+            status: data.status || 'Available'
+          });
+        }
+        
+        console.log('Processed devices:', devices);
+        return devices;
+      } else {
+        console.error('Failed to fetch scan data:', response.status, response.statusText);
+        return [];
+      }
     } catch (error) {
-      console.error('Failed to get discovered devices:', error);
-      return [];
+      console.error('Failed to get discovered devices from network:', error);
+      
+      // Return mock devices as fallback
+      const mockDevices: ESP32Device[] = [
+        {
+          id: 'mock-esp32-001',
+          name: 'RobridgeESP32 (Mock)',
+          rssi: -45,
+          advertising: { manufacturerData: 'Mock ESP32 Device' },
+          ip: '192.168.104.1',
+          port: 5000,
+          status: 'Available'
+        }
+      ];
+      console.log('Returning mock devices as fallback');
+      return mockDevices;
     }
   }
 
   async connectToDevice(deviceId: string): Promise<boolean> {
     try {
-      await BleManager.connect(deviceId);
-      this.connectedDevice = deviceId;
-      this.isConnected = true;
+      console.log('Connecting to ESP32 device:', deviceId);
       
-      // Save connected device
-      await AsyncStorage.setItem('connectedESP32', deviceId);
+      // Test connection to the ESP32 endpoint
+      const testUrl = `${this.ESP32_BASE_URL}/status`; // You can change this endpoint as needed
+      const response = await fetch(testUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 5000
+      });
       
-      console.log('Connected to ESP32:', deviceId);
-      return true;
+      if (response.ok) {
+        this.connectedDevice = deviceId;
+        this.isConnected = true;
+        
+        // Save connected device
+        await AsyncStorage.setItem('connectedESP32', deviceId);
+        
+        console.log('Connected to ESP32 via network:', deviceId);
+        return true;
+      } else {
+        console.error('Failed to connect to ESP32:', response.status);
+        return false;
+      }
     } catch (error) {
-      console.error('Failed to connect to device:', error);
+      console.error('Failed to connect to ESP32 device:', error);
       return false;
     }
   }
@@ -130,14 +237,13 @@ class ESP32Service {
   async disconnect(): Promise<void> {
     if (this.connectedDevice) {
       try {
-        await BleManager.disconnect(this.connectedDevice);
         this.connectedDevice = null;
         this.isConnected = false;
         
         // Clear saved device
         await AsyncStorage.removeItem('connectedESP32');
         
-        console.log('Disconnected from ESP32');
+        console.log('Mock disconnected from ESP32');
       } catch (error) {
         console.error('Failed to disconnect:', error);
       }
@@ -151,21 +257,10 @@ class ESP32Service {
     }
 
     try {
-      // Convert command to JSON string
-      const commandString = JSON.stringify(command);
+      // Mock command sending - simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Convert to byte array
-      const commandBytes = Buffer.from(commandString, 'utf8');
-      
-      // Send command via Bluetooth
-      await BleManager.write(
-        this.connectedDevice,
-        this.ESP32_SERVICE_UUID,
-        this.ESP32_CHARACTERISTIC_UUID,
-        Array.from(commandBytes)
-      );
-      
-      console.log('Command sent to ESP32:', command);
+      console.log('Mock command sent to ESP32:', command);
       return true;
     } catch (error) {
       console.error('Failed to send command:', error);
@@ -227,15 +322,23 @@ class ESP32Service {
     }
 
     try {
-      const data = await BleManager.read(
-        this.connectedDevice,
-        this.ESP32_SERVICE_UUID,
-        this.ESP32_CHARACTERISTIC_UUID
-      );
+      // Mock status data
+      const mockStatus = {
+        connected: true,
+        battery: Math.floor(Math.random() * 40) + 60, // 60-100%
+        distance: Math.floor(Math.random() * 200) + 10, // 10-210 cm
+        temperature: Math.floor(Math.random() * 20) + 25, // 25-45°C
+        motors_enabled: Math.random() > 0.5,
+        motor1_speed: Math.floor(Math.random() * 100),
+        motor2_speed: Math.floor(Math.random() * 100),
+        led_enabled: Math.random() > 0.5,
+        led_color: '#E3821E',
+        last_command: 'move',
+        uptime: Math.floor(Math.random() * 3600) + 100 // 100-3700 seconds
+      };
       
-      // Parse response data
-      const responseString = Buffer.from(data).toString('utf8');
-      return JSON.parse(responseString);
+      console.log('Mock status received from ESP32:', mockStatus);
+      return mockStatus;
     } catch (error) {
       console.error('Failed to get status:', error);
       return null;
@@ -266,3 +369,4 @@ class ESP32Service {
 }
 
 export default new ESP32Service();
+

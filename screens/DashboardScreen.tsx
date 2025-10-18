@@ -47,6 +47,35 @@ const DashboardScreen = () => {
     { id: '3', type: 'warning', message: 'Battery level low: 15%', timestamp: '10 min ago', icon: 'warning' },
     { id: '4', type: 'image', message: 'Image processed successfully', timestamp: '15 min ago', icon: 'image' },
   ]);
+
+  // Development mode - generate dynamic activity history
+  const generateMockActivity = () => {
+    const activities: ActivityEvent[] = [
+      { id: '1', type: 'scan', message: 'Barcode scanned: 123456789', timestamp: '2 min ago', icon: 'scan' },
+      { id: '2', type: 'robot', message: 'Robot moved to position (10, 20, 5)', timestamp: '5 min ago', icon: 'game-controller' },
+      { id: '3', type: 'warning', message: 'Battery level low: 15%', timestamp: '10 min ago', icon: 'warning' },
+      { id: '4', type: 'image', message: 'Image processed successfully', timestamp: '15 min ago', icon: 'image' },
+      { id: '5', type: 'scan', message: 'Barcode scanned: 987654321', timestamp: '18 min ago', icon: 'scan' },
+      { id: '6', type: 'robot', message: 'Robot returned to home position', timestamp: '22 min ago', icon: 'game-controller' },
+      { id: '7', type: 'success', message: 'Rack A1 inventory updated', timestamp: '25 min ago', icon: 'checkmark-circle' },
+      { id: '8', type: 'scan', message: 'Barcode scanned: 456789123', timestamp: '28 min ago', icon: 'scan' },
+      { id: '9', type: 'robot', message: 'Robot started charging', timestamp: '30 min ago', icon: 'battery-charging' },
+      { id: '10', type: 'image', message: 'Product image captured', timestamp: '35 min ago', icon: 'camera' },
+    ];
+    return activities;
+  };
+
+  // Function to add new activity (for development mode)
+  const addNewActivity = (type: string, message: string, icon: string) => {
+    const newActivity: ActivityEvent = {
+      id: Date.now().toString(),
+      type,
+      message,
+      timestamp: 'Just now',
+      icon
+    };
+    setRecentActivity(prevActivity => [newActivity, ...prevActivity.slice(0, 9)]);
+  };
   const [dashboardStats, setDashboardStats] = useState({
     users: 0,
     sessions: 0,
@@ -186,6 +215,34 @@ const DashboardScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Development mode - initialize and update activity history
+  useEffect(() => {
+    const isDevelopmentMode = true; // Set to false when backend is available
+    
+    if (isDevelopmentMode) {
+      // Initialize with mock activity data
+      setRecentActivity(generateMockActivity());
+      
+      // Update activity every 30 seconds to simulate new events
+      const activityInterval = setInterval(() => {
+        setRecentActivity(prevActivity => {
+          const newActivity = generateMockActivity();
+          // Add a new random activity at the top
+          const randomActivities = [
+            { id: Date.now().toString(), type: 'scan', message: `Barcode scanned: ${Math.floor(Math.random() * 900000000) + 100000000}`, timestamp: 'Just now', icon: 'scan' },
+            { id: Date.now().toString(), type: 'robot', message: `Robot moved to position (${Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 10)})`, timestamp: 'Just now', icon: 'game-controller' },
+            { id: Date.now().toString(), type: 'success', message: `Rack ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}${Math.floor(Math.random() * 10) + 1} inventory updated`, timestamp: 'Just now', icon: 'checkmark-circle' },
+            { id: Date.now().toString(), type: 'image', message: 'Product image captured and processed', timestamp: 'Just now', icon: 'camera' },
+          ];
+          const randomActivity = randomActivities[Math.floor(Math.random() * randomActivities.length)];
+          return [randomActivity, ...prevActivity.slice(0, 9)]; // Keep only 10 most recent
+        });
+      }, 30000); // Update every 30 seconds
+      
+      return () => clearInterval(activityInterval);
+    }
+  }, []);
+
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
@@ -199,13 +256,18 @@ const DashboardScreen = () => {
     }
   }, [authToken]);
 
-  const openDrawer = () => {
-    console.log('Menu button pressed - attempting to open drawer');
+  const toggleDrawer = () => {
+    console.log('DashboardScreen: Menu button pressed - attempting to toggle drawer');
+    console.log('DashboardScreen: navigation object:', navigation);
     try {
-      navigation.openDrawer();
-      console.log('Drawer opened successfully');
+      if (navigation && navigation.toggleDrawer) {
+        navigation.toggleDrawer();
+        console.log('DashboardScreen: Drawer toggled successfully');
+      } else {
+        console.error('DashboardScreen: navigation.toggleDrawer is not available');
+      }
     } catch (error) {
-      console.error('Error opening drawer:', error);
+      console.error('DashboardScreen: Error toggling drawer:', error);
     }
   };
 
@@ -214,8 +276,8 @@ const DashboardScreen = () => {
       'Logout',
       'Are you sure you want to logout?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: logout },
+        { text: 'No', style: 'cancel' },
+        { text: 'Yes', style: 'destructive', onPress: logout },
       ]
     );
   };
@@ -224,15 +286,34 @@ const DashboardScreen = () => {
     switch (action) {
       case 'scan':
         navigation.navigate('BarcodeScanner');
+        // Add test activity
+        addNewActivity('scan', `Barcode scanned: ${Math.floor(Math.random() * 900000000) + 100000000}`, 'scan');
         break;
       case 'generate':
         navigation.navigate('BarcodeGenerator');
+        // Add test activity
+        addNewActivity('success', 'New barcode generated successfully', 'qr-code');
         break;
       case 'control':
         navigation.navigate('RobotControl');
+        // Add test activity
+        addNewActivity('robot', `Robot moved to position (${Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 50)}, ${Math.floor(Math.random() * 10)})`, 'game-controller');
         break;
       case 'process':
         navigation.navigate('ImageProcessor');
+        // Add test activity
+        addNewActivity('image', 'Image processed successfully', 'image');
+        break;
+      case 'test':
+        // Add random test activity
+        const testActivities = [
+          { type: 'scan', message: `Test barcode scanned: ${Math.floor(Math.random() * 900000000) + 100000000}`, icon: 'scan' },
+          { type: 'robot', message: 'Test robot movement completed', icon: 'game-controller' },
+          { type: 'success', message: 'Test operation successful', icon: 'checkmark-circle' },
+          { type: 'warning', message: 'Test warning generated', icon: 'warning' },
+        ];
+        const randomTest = testActivities[Math.floor(Math.random() * testActivities.length)];
+        addNewActivity(randomTest.type, randomTest.message, randomTest.icon);
         break;
     }
   };
@@ -258,7 +339,7 @@ const DashboardScreen = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.menuButton}
-          onPress={openDrawer}
+          onPress={toggleDrawer}
           activeOpacity={0.5}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -400,6 +481,14 @@ const DashboardScreen = () => {
             >
               <Ionicons name="image" size={32} color={COLORS.primary} />
               <Text style={styles.actionText}>Process Image</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.actionCard} 
+              activeOpacity={0.7}
+              onPress={() => handleQuickAction('test')}
+            >
+              <Ionicons name="add-circle" size={32} color={COLORS.primary} />
+              <Text style={styles.actionText}>Add Test Activity</Text>
             </TouchableOpacity>
           </View>
         </View>

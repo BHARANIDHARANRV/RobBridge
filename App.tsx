@@ -12,82 +12,47 @@ import { COLORS } from './constants/colors';
 const AppContent = () => {
   const { showSplashAfterLogin, hideSplashAfterLogin } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
-  const [fadeAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
-    // Initial app loading
+    // Initial app loading - reduced to 2 seconds for faster startup
     const timer = setTimeout(() => {
-      // Fade out transition
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }).start(() => {
-        setIsLoading(false);
-        // Fade in transition
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }).start();
-      });
-    }, 5000); // 5 seconds initial splash
+      setIsLoading(false);
+    }, 2000); // 2 seconds initial splash
 
     return () => clearTimeout(timer);
-  }, [fadeAnim]);
+  }, []);
 
   useEffect(() => {
     // Post-login splash screen
     if (showSplashAfterLogin) {
       const timer = setTimeout(() => {
-        // Fade out transition
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }).start(() => {
-          hideSplashAfterLogin();
-          // Fade in transition
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }).start();
-        });
-      }, 5000); // 5 seconds post-login splash
+        hideSplashAfterLogin();
+      }, 2000); // 2 seconds post-login splash
 
       return () => clearTimeout(timer);
     }
-  }, [showSplashAfterLogin, hideSplashAfterLogin, fadeAnim]);
+  }, [showSplashAfterLogin, hideSplashAfterLogin]);
 
   if (isLoading) {
     return (
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <SplashScreen 
-          onAnimationComplete={() => setIsLoading(false)}
-          duration={5000}
-        />
-      </Animated.View>
+      <SplashScreen 
+        onAnimationComplete={() => setIsLoading(false)}
+        duration={2000}
+      />
     );
   }
 
   if (showSplashAfterLogin) {
     return (
-      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-        <SplashScreen 
-          onAnimationComplete={() => hideSplashAfterLogin()}
-          duration={5000}
-          message="Welcome back!"
-        />
-      </Animated.View>
+      <SplashScreen 
+        onAnimationComplete={() => hideSplashAfterLogin()}
+        duration={2000}
+        message="Welcome back!"
+      />
     );
   }
 
-  return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-      <AppNavigator />
-    </Animated.View>
-  );
+  return <AppNavigator />;
 };
 
 export default function App() {

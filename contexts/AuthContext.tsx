@@ -40,6 +40,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      // Development mode - bypass backend for demo credentials
+      const isDevelopmentMode = true; // Set to false when backend is available
+      
+      if (isDevelopmentMode) {
+        console.log('Development mode: Bypassing backend authentication');
+        
+        // Check for demo credentials
+        if (email === 'admin' && password === 'admin123') {
+          console.log('Demo credentials accepted');
+          setUser({
+            id: 1,
+            email: 'admin@robbridge.com',
+            username: 'admin',
+            role: 'admin'
+          });
+          setAuthToken('demo-token-123');
+          setIsAuthenticated(true);
+          setShowSplashAfterLogin(true);
+          console.log('Login successful (development mode)');
+          return true;
+        } else {
+          console.log('Invalid demo credentials');
+          return false;
+        }
+      }
+      
       console.log('Attempting login to:', API_URLS.LOGIN);
       console.log('Login data:', { username: email, password: password });
       
