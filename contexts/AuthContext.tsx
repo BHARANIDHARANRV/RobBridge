@@ -60,6 +60,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setShowSplashAfterLogin(true);
           console.log('Login successful (development mode)');
           return true;
+        } else if (email === 'atman@expo.com' && password === 'expo123') {
+          console.log('Expo credentials accepted');
+          setUser({
+            id: 2,
+            email: 'atman@expo.com',
+            username: 'atman@expo.com',
+            role: 'expo'
+          });
+          setAuthToken('expo-token-456');
+          setIsAuthenticated(true);
+          setShowSplashAfterLogin(true);
+          console.log('Login successful (development mode)');
+          return true;
         } else {
           console.log('Invalid demo credentials');
           return false;
@@ -114,10 +127,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    console.log('AuthContext: Logout function called');
+    console.log('AuthContext: Current user before logout:', user);
     setUser(null);
     setAuthToken(null);
     setIsAuthenticated(false);
     setShowSplashAfterLogin(false);
+    console.log('AuthContext: Logout completed, user should be redirected to login screen');
   };
 
   const hideSplashAfterLogin = () => {

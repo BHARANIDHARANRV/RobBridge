@@ -1,10 +1,32 @@
 import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { COLORS } from '../constants/colors';
 import { SIZES } from '../constants/sizes';
 import { useAuth } from '../contexts/AuthContext';
+
+// Define which screens are accessible for each role
+const getAccessibleScreens = (userRole: string): string[] => {
+  if (userRole === 'expo') {
+    // Expo user can only access: Dashboard, BarcodeScanner, History (Saved Barcodes), Settings
+    return ['Dashboard', 'BarcodeScanner', 'History', 'Settings'];
+  }
+  // Admin and other roles have access to all screens except ESP32Control
+  return [
+    'Dashboard',
+    'BarcodeScanner', 
+    'History',
+    'BarcodeGenerator',
+    'ImageProcessor',
+    'RobotControl',
+    'RackStatus',
+    'RackManagement',
+    'RackSettings',
+    'ProductMovement',
+    'Settings'
+  ];
+};
 
 // Import screens
 import DashboardScreen from '../screens/DashboardScreen';
@@ -29,6 +51,44 @@ const Drawer = createDrawerNavigator();
 const CustomDrawerContent = (props: any) => {
   const { user, logout } = useAuth();
   
+  // Filter drawer items based on user role
+  const accessibleScreens = getAccessibleScreens(user?.role || 'admin');
+  const filteredProps = {
+    ...props,
+    state: {
+      ...props.state,
+      routes: props.state.routes.filter((route: any) => 
+        accessibleScreens.includes(route.name)
+      ),
+    },
+  };
+
+  // Handle logout with confirmation
+  const handleLogout = () => {
+    console.log('CustomDrawerContent: Logout button pressed for user:', user?.role);
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: () => {
+            console.log('CustomDrawerContent: Logout confirmed, calling logout function');
+            try {
+              logout();
+              console.log('CustomDrawerContent: Logout successful');
+            } catch (error) {
+              console.error('CustomDrawerContent: Error during logout:', error);
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          }
+        },
+      ]
+    );
+  };
+  
   return (
     <DrawerContentScrollView {...props} style={styles.drawerContent}>
       {/* Logo Header */}
@@ -45,12 +105,12 @@ const CustomDrawerContent = (props: any) => {
       {/* Divider */}
       <View style={styles.divider} />
       
-      {/* Default drawer items */}
-      <DrawerItemList {...props} />
+      {/* Filtered drawer items */}
+      <DrawerItemList {...filteredProps} />
       
       {/* Logout button */}
       <View style={styles.logoutSection}>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -60,6 +120,9 @@ const CustomDrawerContent = (props: any) => {
 };
 
 const DrawerNavigator = () => {
+  const { user } = useAuth();
+  const accessibleScreens = getAccessibleScreens(user?.role || 'admin');
+
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
@@ -137,90 +200,105 @@ const DrawerNavigator = () => {
         keyboardDismissMode: 'on-drag',
       })}
     >
-      <Drawer.Screen 
-        name="Dashboard" 
-        component={DashboardScreen}
-        options={{ 
-          drawerLabel: 'Dashboard'
-        }}
-      />
-      <Drawer.Screen 
-        name="BarcodeScanner" 
-        component={BarcodeScannerScreen}
-        options={{ 
-          drawerLabel: 'Scan Barcode'
-        }}
-      />
-      <Drawer.Screen 
-        name="History" 
-        component={HistoryScreen}
-        options={{ 
-          drawerLabel: 'Saved Barcodes'
-        }}
-      />
-      <Drawer.Screen 
-        name="BarcodeGenerator" 
-        component={BarcodeGeneratorScreen}
-        options={{ 
-          drawerLabel: 'Generate Barcode'
-        }}
-      />
-      <Drawer.Screen 
-        name="ImageProcessor" 
-        component={ImageProcessorScreen}
-        options={{ 
-          drawerLabel: 'Image Processor'
-        }}
-      />
-      <Drawer.Screen 
-        name="RobotControl" 
-        component={RobotControlScreen}
-        options={{ 
-          drawerLabel: 'Robot Control'
-        }}
-      />
-      <Drawer.Screen 
-        name="RackStatus" 
-        component={RackStatusScreen}
-        options={{ 
-          drawerLabel: 'Rack Status'
-        }}
-      />
-      <Drawer.Screen 
-        name="RackManagement" 
-        component={RackManagementScreenNew}
-        options={{ 
-          drawerLabel: 'Rack Management'
-        }}
-      />
-      <Drawer.Screen 
-        name="RackSettings" 
-        component={RackSettingsScreen}
-        options={{ 
-          drawerLabel: 'Rack Settings'
-        }}
-      />
-      <Drawer.Screen 
-        name="ProductMovement" 
-        component={ProductMovementScreen}
-        options={{ 
-          drawerLabel: 'Product Movement'
-        }}
-      />
-      <Drawer.Screen 
-        name="ESP32Control" 
-        component={ESP32ControlScreen}
-        options={{ 
-          drawerLabel: 'ESP32 Control'
-        }}
-      />
-      <Drawer.Screen 
-        name="Settings" 
-        component={SettingsScreen}
-        options={{ 
-          drawerLabel: 'Settings'
-        }}
-      />
+      {accessibleScreens.includes('Dashboard') && (
+        <Drawer.Screen 
+          name="Dashboard" 
+          component={DashboardScreen}
+          options={{ 
+            drawerLabel: 'Dashboard'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('BarcodeScanner') && (
+        <Drawer.Screen 
+          name="BarcodeScanner" 
+          component={BarcodeScannerScreen}
+          options={{ 
+            drawerLabel: 'Scanned Barcode'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('History') && (
+        <Drawer.Screen 
+          name="History" 
+          component={HistoryScreen}
+          options={{ 
+            drawerLabel: 'Saved Barcodes'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('BarcodeGenerator') && (
+        <Drawer.Screen 
+          name="BarcodeGenerator" 
+          component={BarcodeGeneratorScreen}
+          options={{ 
+            drawerLabel: 'Generate Barcode'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('ImageProcessor') && (
+        <Drawer.Screen 
+          name="ImageProcessor" 
+          component={ImageProcessorScreen}
+          options={{ 
+            drawerLabel: 'Image Processor'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('RobotControl') && (
+        <Drawer.Screen 
+          name="RobotControl" 
+          component={RobotControlScreen}
+          options={{ 
+            drawerLabel: 'Robot Control'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('RackStatus') && (
+        <Drawer.Screen 
+          name="RackStatus" 
+          component={RackStatusScreen}
+          options={{ 
+            drawerLabel: 'Rack Status'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('RackManagement') && (
+        <Drawer.Screen 
+          name="RackManagement" 
+          component={RackManagementScreenNew}
+          options={{ 
+            drawerLabel: 'Rack Management'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('RackSettings') && (
+        <Drawer.Screen 
+          name="RackSettings" 
+          component={RackSettingsScreen}
+          options={{ 
+            drawerLabel: 'Rack Settings'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('ProductMovement') && (
+        <Drawer.Screen 
+          name="ProductMovement" 
+          component={ProductMovementScreen}
+          options={{ 
+            drawerLabel: 'Product Movement'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('Settings') && (
+        <Drawer.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ 
+            drawerLabel: 'Settings'
+          }}
+        />
+      )}
     </Drawer.Navigator>
   );
 };

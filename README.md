@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Robridge Mobile Application
 
 A comprehensive React Native mobile application for robot control and barcode management systems, built with Expo.
@@ -244,3 +245,6 @@ For support and questions:
 ---
 
 **Robridge Mobile** - Bridging the gap between industrial automation and mobile technology.
+=======
+# RobBridge
+>>>>>>> d00bd2185f10732bfd47eb97f82a8fa0b4ff3fd2

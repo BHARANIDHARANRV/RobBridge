@@ -125,11 +125,11 @@ const LoginScreen = () => {
             <Ionicons name="mail" size={20} color="#6c757d" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Username (admin)"
+              placeholder="Username or Email"
               placeholderTextColor={COLORS.textSecondary}
               value={email}
               onChangeText={setEmail}
-              keyboardType="default"
+              keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -191,8 +191,8 @@ const LoginScreen = () => {
           {/* Demo Credentials */}
           <View style={styles.demoContainer}>
             <Text style={styles.demoTitle}>Demo Credentials:</Text>
-            <Text style={styles.demoText}>Username: admin</Text>
-            <Text style={styles.demoText}>Password: admin123</Text>
+            <Text style={styles.demoText}>Admin - Username: admin | Password: admin123</Text>
+            <Text style={styles.demoText}>Expo - Username: atman@expo.com | Password: expo123</Text>
           </View>
         </View>
         </ScrollView>
