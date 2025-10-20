@@ -14,7 +14,7 @@ import { RootDrawerNavigationProp } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 import { SIZES } from '../constants/sizes';
-import { API_URLS } from '../config/server';
+import { API_URLS, SERVER_CONFIG } from '../config/server';
 
 interface SystemHealth {
   database: { status: string; lastCheck: string };
@@ -91,7 +91,10 @@ const DashboardScreen = () => {
     try {
       setLoading(true);
       
-      // First authenticate
+      // First authenticate with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), SERVER_CONFIG.CONNECTION.TIMEOUT);
+      
       const loginResponse = await fetch(API_URLS.LOGIN, {
         method: 'POST',
         headers: {
@@ -101,7 +104,14 @@ const DashboardScreen = () => {
           username: 'admin',
           password: 'admin123',
         }),
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
+      
+      if (!loginResponse.ok) {
+        throw new Error(`HTTP ${loginResponse.status}: ${loginResponse.statusText}`);
+      }
       
       const loginResult = await loginResponse.json();
       if (!loginResult.success) {
@@ -114,8 +124,15 @@ const DashboardScreen = () => {
       // Load dashboard stats
       await loadDashboardStats(loginResult.token);
     } catch (error) {
-      console.error('Error authenticating or loading dashboard data:', error);
+      console.log('Server unavailable, running in offline mode:', error.message || error);
       setIsConnected(false);
+      // Set default values for offline mode
+      setDashboardStats({
+        users: 1,
+        sessions: 0,
+        barcodes: 0,
+        robot_status: 'offline'
+      });
     } finally {
       setLoading(false);
     }
@@ -124,13 +141,23 @@ const DashboardScreen = () => {
   // Load dashboard statistics from backend
   const loadDashboardStats = async (token?: string) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), SERVER_CONFIG.CONNECTION.TIMEOUT);
+      
       const response = await fetch(API_URLS.DASHBOARD_STATS, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token || authToken}`,
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
       
       const result = await response.json();
       
@@ -165,7 +192,14 @@ const DashboardScreen = () => {
         }
       }
     } catch (error) {
-      console.error('Error loading dashboard stats:', error);
+      console.log('Dashboard stats unavailable, using default values:', error.message || error);
+      // Set default values for offline mode
+      setDashboardStats({
+        users: 1,
+        sessions: 0,
+        barcodes: 0,
+        robot_status: 'offline'
+      });
     }
   };
 
@@ -210,7 +244,19 @@ const DashboardScreen = () => {
 
   // Check connection on component mount and every 10 seconds
   useEffect(() => {
-    authenticateAndLoadData();
+    // Initialize with safe default values
+    setDashboardStats({
+      users: 1,
+      sessions: 0,
+      barcodes: 0,
+      robot_status: 'offline'
+    });
+    
+    // Try to authenticate and load data, but don't crash if it fails
+    authenticateAndLoadData().catch(error => {
+      console.log('Initial authentication failed, running in offline mode:', error);
+    });
+    
     const interval = setInterval(checkConnection, 10000);
     return () => clearInterval(interval);
   }, []);

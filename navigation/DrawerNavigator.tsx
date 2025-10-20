@@ -9,8 +9,8 @@ import { useAuth } from '../contexts/AuthContext';
 // Define which screens are accessible for each role
 const getAccessibleScreens = (userRole: string): string[] => {
   if (userRole === 'expo') {
-    // Expo user can only access: Dashboard, BarcodeScanner, History (Saved Barcodes), Settings
-    return ['Dashboard', 'BarcodeScanner', 'History', 'Settings'];
+    // Expo user can only access: Dashboard, BarcodeScanner, History (Saved Barcodes), Settings, ProfileAccount
+    return ['Dashboard', 'BarcodeScanner', 'History', 'Settings', 'ProfileAccount'];
   }
   // Admin and other roles have access to all screens except ESP32Control
   return [
@@ -24,7 +24,8 @@ const getAccessibleScreens = (userRole: string): string[] => {
     'RackManagement',
     'RackSettings',
     'ProductMovement',
-    'Settings'
+    'Settings',
+    'ProfileAccount'
   ];
 };
 
@@ -41,6 +42,7 @@ import ProductMovementScreen from '../screens/ProductMovementScreen';
 import ESP32ControlScreen from '../screens/ESP32ControlScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ProfileAccountScreen from '../screens/ProfileAccountScreen';
 
 // Import the logo image
 const logoImage = require('../assets/logo.png');
@@ -167,6 +169,9 @@ const DrawerNavigator = () => {
             case 'Settings':
               iconName = focused ? 'settings' : 'settings-outline';
               break;
+            case 'ProfileAccount':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
             default:
               iconName = 'help-outline';
           }
@@ -214,7 +219,7 @@ const DrawerNavigator = () => {
           name="BarcodeScanner" 
           component={BarcodeScannerScreen}
           options={{ 
-            drawerLabel: 'Scanned Barcode'
+            drawerLabel: 'Scan Barcode'
           }}
         />
       )}
@@ -296,6 +301,15 @@ const DrawerNavigator = () => {
           component={SettingsScreen}
           options={{ 
             drawerLabel: 'Settings'
+          }}
+        />
+      )}
+      {accessibleScreens.includes('ProfileAccount') && (
+        <Drawer.Screen 
+          name="ProfileAccount" 
+          component={ProfileAccountScreen}
+          options={{ 
+            drawerLabel: 'Profile & Account'
           }}
         />
       )}

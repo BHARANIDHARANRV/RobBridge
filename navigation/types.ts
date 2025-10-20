@@ -13,6 +13,7 @@ export type RootDrawerParamList = {
   ESP32Control: undefined;
   History: undefined;
   Settings: undefined;
+  ProfileAccount: undefined;
 };
 
 export type RootDrawerNavigationProp = DrawerNavigationProp<RootDrawerParamList>;
